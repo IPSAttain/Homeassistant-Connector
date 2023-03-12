@@ -1,0 +1,16 @@
+{
+    "id": "{9FC27B72-B1C0-EAD2-9E38-59145DA74B10}",
+    "name": "Homeassistant Configuator",
+    "type": 4,
+    "vendor": "",
+    "aliases": [],
+    "parentRequirements": [
+        "{163D93EA-4256-36DE-F3EC-46D7507CFC9B}"
+    ],
+    "childRequirements": [],
+    "implemented": [
+        "{48562F97-BBA9-3E2F-2E24-3333C9405454}"
+    ],
+    "prefix": "HACON",
+    "url": ""
+}

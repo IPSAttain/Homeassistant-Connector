@@ -1,0 +1,36 @@
+{
+    "elements": [],
+    "actions": [
+        {
+            "type": "Configurator",
+            "name": "Configuration",
+            "delete": true,
+            "columns": [
+                {
+                    "caption": "Name",
+                    "name": "name",
+                    "width": "20%"
+                },{
+                    "caption": "Entity ID",
+                    "name": "entity_id",
+                    "width": "20%"
+                },{
+                    "caption": "State",
+                    "name": "state",
+                    "width": "20%"
+                },{
+                    "caption": "Device Class",
+                    "name": "device_class",
+                    "width": "auto"
+                }
+            ],
+            "values": []
+        },
+        {
+            "type": "Button",
+            "caption": "Refresh",
+            "onClick": "HACON_ConfiguratorRequestAllEntities($id);"
+        }
+	],
+    "status": []
+}

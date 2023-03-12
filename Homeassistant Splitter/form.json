@@ -1,0 +1,21 @@
+{
+    "elements": [
+        {
+            "type": "ValidationTextBox",
+            "name": "host",
+            "caption": "IP Address or URL"
+        },
+        {
+            "type": "NumberSpinner",
+            "name": "port",
+            "caption": "Port"
+        },
+        {
+            "type": "ValidationTextBox",
+            "name": "access_token",
+            "caption": "Token"
+        }
+    ],
+    "actions": [],
+    "status": []
+}

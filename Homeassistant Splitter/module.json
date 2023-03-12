@@ -1,0 +1,21 @@
+{
+    "id": "{A9E0ED8B-75CE-F2EA-0533-330978F392A9}",
+    "name": "Homeassistant Splitter",
+    "type": 2,
+    "vendor": "Homeassistant",
+    "aliases": [],
+    "parentRequirements": [
+        "{79827379-F36E-4ADA-8A95-5F8D1DC92FA9}"
+    ],
+    "childRequirements": [
+        "{48562F97-BBA9-3E2F-2E24-3333C9405453}",
+        "{48562F97-BBA9-3E2F-2E24-3333C9405454}"
+    ],
+    "implemented": [
+        "{163D93EA-4256-36DE-F3EC-46D7507CFC9A}",
+        "{163D93EA-4256-36DE-F3EC-46D7507CFC9B}",
+        "{018EF6B5-AB94-40C6-AA53-46943E824ACF}"
+    ],
+    "prefix": "HACON",
+    "url": "https://developers.home-assistant.io/docs/api/websocket"
+}

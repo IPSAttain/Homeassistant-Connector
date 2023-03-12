@@ -1,0 +1,18 @@
+{
+    "elements": [
+        {
+            "type": "ValidationTextBox",
+            "caption": "Entity",
+            "name": "entity_id",
+            "enabled": false 
+        },
+        {
+            "type": "ValidationTextBox",
+            "caption": "Friendly Name",
+            "name": "name",
+            "enabled": false 
+        }
+    ],
+    "actions": [],
+    "status": []
+}

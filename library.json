@@ -1,0 +1,12 @@
+{
+    "id": "{56D71BF3-5C82-CFF8-6F86-1158554730C7}",
+    "name": "Homeassistant Connector",
+    "author": "Attain",
+    "url": "",
+    "compatibility": {
+        "version": "6.0"
+    },
+    "version": "1.0",
+    "build": 1,
+    "date": 0
+}

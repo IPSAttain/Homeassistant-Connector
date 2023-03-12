@@ -1,0 +1,16 @@
+{
+    "id": "{761BE863-4B98-0846-0CF6-EC37CBBD61CF}",
+    "name": "Homeassistant Device",
+    "type": 3,
+    "vendor": "",
+    "aliases": [],
+    "parentRequirements": [
+        "{163D93EA-4256-36DE-F3EC-46D7507CFC9A}"
+    ],
+    "childRequirements": [],
+    "implemented": [
+        "{48562F97-BBA9-3E2F-2E24-3333C9405453}"
+    ],
+    "prefix": "HACON",
+    "url": ""
+}
