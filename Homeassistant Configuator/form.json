@@ -13,23 +13,22 @@
                 },{
                     "caption": "Entity ID",
                     "name": "entity_id",
-                    "width": "20%"
+                    "width": "30%"
                 },{
                     "caption": "State",
                     "name": "state",
-                    "width": "20%"
+                    "width": "10%"
                 },{
                     "caption": "Device Class",
                     "name": "device_class",
+                    "width": "10%"
+                },{
+                    "caption": "Last Changed",
+                    "name": "last_changed",
                     "width": "auto"
                 }
             ],
             "values": []
-        },
-        {
-            "type": "Button",
-            "caption": "Refresh",
-            "onClick": "HACON_ConfiguratorRequestAllEntities($id);"
         }
 	],
     "status": []

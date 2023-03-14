@@ -16,6 +16,22 @@
             "caption": "Token"
         }
     ],
-    "actions": [],
+    "actions": [
+        {
+            "type": "Button",
+            "caption": "Request Events",
+            "onClick": "HACON_RequestEvents($id);"
+        },
+        {
+            "type": "Button",
+            "caption": "Subsribe Events",
+            "onClick": "HACON_SubscribeEvents($id);"
+        },
+        {
+            "type": "Button",
+            "caption": "Unsubsribe Events",
+            "onClick": "HACON_UnSubscribeEvents($id);"
+        }
+    ],
     "status": []
 }

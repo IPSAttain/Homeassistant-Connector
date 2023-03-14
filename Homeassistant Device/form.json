@@ -13,6 +13,12 @@
             "enabled": false 
         }
     ],
-    "actions": [],
+    "actions": [
+        {
+            "type": "Button",
+            "caption": "Get States",
+            "onClick": "HACON_Send($id);"
+        }
+    ],
     "status": []
 }

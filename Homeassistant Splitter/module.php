@@ -17,8 +17,8 @@ class HomeassistantSplitter extends IPSModule
         //ssl not yet supported
         $this->RegisterPropertyBoolean('ssl', false);
         $this->RegisterPropertyString('access_token', '');
-        //$this->RegisterPropertyString('event_filter', '');
-        $this->RegisterAttributeInteger("id",0);
+        $this->RegisterAttributeInteger("id", 1);
+        $this->RegisterAttributeInteger("state_change_id", 0);
     }
 
     public function ApplyChanges()
@@ -30,34 +30,21 @@ class HomeassistantSplitter extends IPSModule
     }
 #=====================================================================================
     public function GetConfigurationForParent()
-#=====================================================================================
-        {
-            $Config['URL'] = ($this->ReadPropertyBoolean('ssl') ? 'wss://' : 'ws://') . $this->ReadPropertyString('host') . ':' . $this->ReadPropertyInteger('port') . '/api/websocket';
-            $Config['VerifyCertificate'] = $this->ReadPropertyBoolean('ssl');
-            return json_encode($Config);
-        }
+    #=====================================================================================
+    {
+        $Config['URL'] = ($this->ReadPropertyBoolean('ssl') ? 'wss://' : 'ws://') . $this->ReadPropertyString('host') . ':' . $this->ReadPropertyInteger('port') . '/api/websocket';
+        $Config['VerifyCertificate'] = $this->ReadPropertyBoolean('ssl');
+        return json_encode($Config);
+    }
 
 #=====================================================================================
     public function ForwardData($JSONString)
 #=====================================================================================
     { // msg from child
         $data = json_decode($JSONString);
-        
         $this->SendDebug(__FUNCTION__, $data->Buffer, 0);
-        switch ($data->Buffer) {
-            case 'get_states':
-                /*
-                $id = $this->ReadAttributeInteger('id');
-                $send['Buffer'] = '{"id": '.$id.',"type": "get_states"}';
-                $send['DataID'] = '{79827379-F36E-4ADA-8A95-5F8D1DC92FA9}';
-                // send to ws port
-                $response = $this->SendDataToParent(json_encode($send));
-                $this->WriteAttributeInteger('id',$id + 1);
-                */
-                $response = $this->GetEntities();
-                $this->SendDebug(__FUNCTION__, $response, 0);
-            break;
-        }
+        $response = $this->RequestApi($data->Buffer);
+        $this->SendDebug(__FUNCTION__, $response, 0);
         return $response;
     }
 
@@ -69,9 +56,8 @@ class HomeassistantSplitter extends IPSModule
         $message = utf8_decode($data->Buffer);
         $this->SendDebug(__FUNCTION__, $message, 0);
         $json = json_decode($message);
-        
-        if (isset($json->type))
-        {
+
+        if (isset($json->type)) {
             switch ($json->type) {
                 case 'auth_required':
                     // auth required
@@ -85,71 +71,104 @@ class HomeassistantSplitter extends IPSModule
                     $this->SendDataToParent(json_encode($send));
                     break;
 
+                case 'auth_ok':
+                    // auth OK
+                    $this->WriteAttributeInteger("id", 1);
+                    $this->SubscribeEvents();
+                    break;
+
                 case 'result':
                     // response to a command
                     $this->SendDebug(__FUNCTION__ . ' ' . $json->type, ($json->success ? 'Success' : 'Failure'), 0);
-                    $send['Buffer'] = $message;
-                    $send['DataID'] = '{48562F97-BBA9-3E2F-2E24-3333C9405454}';
-                    $this->SendDataToChildren(json_encode($send));
+                    if ($this->ReadAttributeInteger('state_change_id') == $json->id)
+                    {
+                        $this->SendDebug(__FUNCTION__,'State Change Registered',0);
+                    }
                     break;
 
                 case 'event':
                     //async events
-                    $this->SendDebug(__FUNCTION__ . ' ' . $json->type, $message, 0);
-                    //$this->SendDataToChildren($message);
+                    $event_id = $this->ReadAttributeInteger('state_change_id');
+                    switch ($event_id) {
+                        case $json->id:
+                            //procceed
+                            $send['Buffer'] = json_encode($json->event->data);
+                            $send['DataID'] = '{48562F97-BBA9-3E2F-2E24-3333C9405453}';
+                            $this->SendDebug(__FUNCTION__ . ' ' . 'Send to child', json_encode($json->event->data), 0);
+                            $this->SendDataToChildren(json_encode($send));
+
+                            break;
+                        case 0:
+                            //could be after module create
+                            $this->WriteAttributeInteger("state_change_id", $json->id);
+                            break;
+                        default:
+                            //more than one subsciption to Events
+                            $this->SendDebug(__FUNCTION__,'State Change Deleted',0);
+                            $this->UnSubscribeEvents();
+                    }
                     break;
                 default:
             }
         }
     }
 
-	public function MessageSink($timestamp, $senderID, $message, $data)
-	{
-		switch ($message) {
-			case IPS_KERNELMESSAGE:
-				if ($data[0] === KR_READY) {
-					$websocket_url = $this->ReadPropertyString('websocket_url');
-					$this->SendDebug("WebSocketURL", $websocket_url, 0);
-					$this->RegisterWebSocket($websocket_url);
-				}
-				break;
-			case IM_CHANGESTATUS:
-				if ($senderID === $this->ParentID) {
-					$this->SendDebug("IM_CHANGESTATUS", "Status: " . $data[0], 0);
-					if ($data[0] === 102) { // IP-Symcon is trying to reconnect
-						$this->SetSummary("Reconnecting...");
-					} elseif ($data[0] === 104) { // IP-Symcon has reconnected
-						$this->SetSummary("Connected");
-						$this->RegisterWebSocket($this->ReadPropertyString('websocket_url'));
-					} elseif ($data[0] === 200) { // IP-Symcon has successfully connected
-						$this->SetSummary("Connected");
-						$this->RegisterWebSocket($this->ReadPropertyString('websocket_url'));
-					}
-				}
-				break;
-			case WM_DISCONNECT:
-				if ($senderID === $this->ParentID) {
-					$this->SetSummary("Disconnected");
-				}
-				break;
-			default:
-				$this->SendDebug("MessageSink", "Unhandled message: " . $message, 0);
-				break;
-		}
-	}
 #=====================================================================================
-    private function GetEntities()
+    public function RequestEvents()
 #=====================================================================================
     {
-        $api_url = $this->ReadPropertyString('host') . ':' . $this->ReadPropertyInteger('port') . '/api';
+        $response = $this->RequestApi('events');
+        $this->SendDebug(__FUNCTION__, $response, 0);
+    }
+
+#=====================================================================================
+    public function SubscribeEvents()
+#=====================================================================================
+    {
+        $data = array();
+        $data['id'] = $this->ReadAttributeInteger("id");
+        $data['type'] = 'subscribe_events';
+        $data['event_type'] = 'state_changed';
+        $this->RequestWebSocket(json_encode($data));
+        $this->SendDebug(__FUNCTION__, json_encode($data), 0);
+        $this->WriteAttributeInteger("state_change_id", $data['id']);
+        $this->WriteAttributeInteger("id", $data['id'] + 1);
+    }
+
+#=====================================================================================
+    public function UnSubscribeEvents()
+#=====================================================================================
+    {
+        $data = array();
+        $data['id'] = $this->ReadAttributeInteger("id");
+        $data['type'] = 'unsubscribe_events';
+        $data['subscription'] = $this->ReadAttributeInteger("state_change_id");
+        $this->RequestWebSocket(json_encode($data));
+        $this->SendDebug(__FUNCTION__, json_encode($data), 0);
+        $this->WriteAttributeInteger("state_change_id", 0);
+        $this->WriteAttributeInteger("id", $data['id'] + 1);
+    }
+
+#=====================================================================================
+    private function RequestWebSocket($message)
+#=====================================================================================
+    {
+        $send['Buffer'] = $message;
+        $send['DataID'] = '{79827379-F36E-4ADA-8A95-5F8D1DC92FA9}';
+        $this->SendDataToParent(json_encode($send));
+    }
+
+#=====================================================================================
+    private function RequestApi(string $endpoint)
+#=====================================================================================
+    {
+        $entities_url = $this->ReadPropertyString('host') . ':' . $this->ReadPropertyInteger('port') . '/api/' . $endpoint;
         $access_token = $this->ReadPropertyString('access_token');
 
         $headers = array(
             "Authorization: Bearer $access_token",
             "Content-Type: application/json",
         );
-
-        $entities_url = $api_url . "/states";
 
         $curl = curl_init($entities_url);
 
@@ -169,4 +188,39 @@ class HomeassistantSplitter extends IPSModule
         return ($response);
     }
 
+
+    public function MessageSink($timestamp, $senderID, $message, $data)
+    {
+        switch ($message) {
+            case IPS_KERNELMESSAGE:
+                if ($data[0] === KR_READY) {
+                    $websocket_url = $this->ReadPropertyString('websocket_url');
+                    $this->SendDebug("WebSocketURL", $websocket_url, 0);
+                    $this->RegisterWebSocket($websocket_url);
+                }
+                break;
+            case IM_CHANGESTATUS:
+                if ($senderID === $this->ParentID) {
+                    $this->SendDebug("IM_CHANGESTATUS", "Status: " . $data[0], 0);
+                    if ($data[0] === 102) { // IP-Symcon is trying to reconnect
+                        $this->SetSummary("Reconnecting...");
+                    } elseif ($data[0] === 104) { // IP-Symcon has reconnected
+                        $this->SetSummary("Connected");
+                        $this->RegisterWebSocket($this->ReadPropertyString('websocket_url'));
+                    } elseif ($data[0] === 200) { // IP-Symcon has successfully connected
+                        $this->SetSummary("Connected");
+                        $this->RegisterWebSocket($this->ReadPropertyString('websocket_url'));
+                    }
+                }
+                break;
+            case WM_DISCONNECT:
+                if ($senderID === $this->ParentID) {
+                    $this->SetSummary("Disconnected");
+                }
+                break;
+            default:
+                $this->SendDebug("MessageSink", "Unhandled message: " . $message, 0);
+                break;
+        }
+    }
 }
