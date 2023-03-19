@@ -43,6 +43,7 @@ class HomeassistantConfiguator extends IPSModule
         $response = $this->SendDataToParent(json_encode([
             'DataID' => "{163D93EA-4256-36DE-F3EC-46D7507CFC9B}",
             'Buffer' => utf8_encode("states"),
+            'Command' => 'get',
         ]));
         $this->SendDebug(__FUNCTION__, $response, 0);
         $entities = json_decode($response, true);
@@ -58,11 +59,12 @@ class HomeassistantConfiguator extends IPSModule
                     $ID = $Instance;
                 }
             }
-            (isset($entity['attributes']['device_class']) ? $device_class = $entity['attributes']['device_class'] : $device_class = 'none');
+            isset($entity['attributes']['device_class']) ? $device_class = $entity['attributes']['device_class'] : $device_class = 'none';
+            isset($entity['attributes']['friendly_name']) ? $friendly_name = $entity['attributes']['friendly_name'] : $friendly_name = 'none';
             $list[] = array(
                 'instanceID' => $ID,
                 'entity_id' => $entity['entity_id'],
-                'name' => $entity['attributes']['friendly_name'],
+                'name' => $friendly_name,
                 'state' => $entity['state'],
                 'device_class' => $device_class,
                 'last_changed' => $entity['last_changed'],
@@ -71,7 +73,7 @@ class HomeassistantConfiguator extends IPSModule
                     "moduleID" => "{761BE863-4B98-0846-0CF6-EC37CBBD61CF}",
                     "configuration" => [
                         "entity_id" => $entity['entity_id'],
-                        "name" => $entity['attributes']['friendly_name'],
+                        "name" => $friendly_name,
                         'websocketID' => 0
                     ]
                 ]

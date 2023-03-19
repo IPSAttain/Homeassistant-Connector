@@ -27,14 +27,15 @@ class HomeassistantDevice extends IPSModule
         $this->SetReceiveDataFilter('.*' . $this->ReadPropertyString('entity_id') . '.*');
     }
 
-    public function Send(string $data ='states/entity_id')
+    public function Send()  //string $data ='states/entity_id'
     {
-        if ($data =='states/entity_id') {
+        //if ($data =='states/entity_id') {
             $data ='states/' . $this->ReadPropertyString('entity_id');
-        }
+        //}
         $return = $this->SendDataToParent(json_encode([
             'DataID' => "{163D93EA-4256-36DE-F3EC-46D7507CFC9A}",
             'Buffer' => utf8_encode($data),
+            'Command' => 'get',
         ]));
         $this->SendDebug(__FUNCTION__, $return, 0);
     }
@@ -80,6 +81,22 @@ class HomeassistantDevice extends IPSModule
                     $this->SetValue('deviceclass', $value);
                     break;
             }
+        }
+    }
+
+    public function RequestAction($Ident, $Value)
+    {
+        switch ($Ident) {
+            case 'ligth':
+                $return = $this->SendDataToParent(json_encode([
+                    'DataID' => "{163D93EA-4256-36DE-F3EC-46D7507CFC9A}",
+                    'Buffer' => utf8_encode($data),
+                    'Command' => 'post',
+                    'Entity' => $this->ReadPropertyString('entity_id'),
+                    'Data' => '',
+                ]));
+                $this-SendPost($this->ReadPropertyString('entity_id'));
+                break;
         }
     }
 }

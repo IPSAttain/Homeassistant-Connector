@@ -43,7 +43,16 @@ class HomeassistantSplitter extends IPSModule
     { // msg from child
         $data = json_decode($JSONString);
         $this->SendDebug(__FUNCTION__, $data->Buffer, 0);
-        $response = $this->RequestApi($data->Buffer);
+        switch ($data->Command) {
+            case 'get':
+                $response = $this->ApiGet($data->Buffer);
+                break;
+
+            case 'post':
+                $response = $this->ApiPost($data->Buffer);
+                break;
+        }
+        
         $this->SendDebug(__FUNCTION__, $response, 0);
         return $response;
     }
@@ -94,7 +103,7 @@ class HomeassistantSplitter extends IPSModule
                             //procceed
                             $send['Buffer'] = json_encode($json->event->data);
                             $send['DataID'] = '{48562F97-BBA9-3E2F-2E24-3333C9405453}';
-                            $this->SendDebug(__FUNCTION__ . ' ' . 'Send to child', json_encode($json->event->data), 0);
+                            //$this->SendDebug(__FUNCTION__ . ' ' . 'Send to child', json_encode($json->event->data), 0);
                             $this->SendDataToChildren(json_encode($send));
 
                             break;
@@ -112,6 +121,7 @@ class HomeassistantSplitter extends IPSModule
             }
         }
     }
+
 
 #=====================================================================================
     public function RequestEvents()
@@ -159,7 +169,7 @@ class HomeassistantSplitter extends IPSModule
     }
 
 #=====================================================================================
-    private function RequestApi(string $endpoint)
+    private function ApiGet(string $endpoint)
 #=====================================================================================
     {
         $entities_url = $this->ReadPropertyString('host') . ':' . $this->ReadPropertyInteger('port') . '/api/' . $endpoint;
@@ -174,6 +184,9 @@ class HomeassistantSplitter extends IPSModule
 
         curl_setopt($curl, CURLOPT_HTTPHEADER, $headers);
         curl_setopt($curl, CURLOPT_RETURNTRANSFER, true);
+        curl_setopt($curl,CURLOPT_CONNECTTIMEOUT,5);
+        curl_setopt($curl,CURLOPT_TIMEOUT,5);
+
 
         $response = curl_exec($curl);
 
@@ -185,6 +198,43 @@ class HomeassistantSplitter extends IPSModule
 
         curl_close($curl);
 
+        return ($response);
+    }
+
+#=====================================================================================
+    private function ApiPost(string $endpoint)
+#=====================================================================================
+    {
+        // turn a light off by make a service call to homeassistant with curl
+
+
+
+
+
+
+        $entities_url = $this->ReadPropertyString('host') . ':' . $this->ReadPropertyInteger('port') . '/api/services/light/' . $endpoint;
+        $access_token = $this->ReadPropertyString('access_token');
+
+        $headers = array(
+            "Authorization: Bearer $access_token",
+            "Content-Type: application/json",
+        );
+        //$url = 'http://your-homeassistant-url:8123/api/services/light/turn_on';
+
+        $data = array(
+            'entity_id' => 'light.living_room',
+            'brightness' => 255
+        );
+        
+        $ch = curl_init($url);
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+        curl_setopt($ch, CURLOPT_POST, true);
+        curl_setopt($curl, CURLOPT_HTTPHEADER, $headers);
+
+        curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($data));
+        $response = curl_exec($ch);
+        curl_close($ch);
+        
         return ($response);
     }
 
